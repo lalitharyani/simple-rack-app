@@ -12,12 +12,19 @@ class MainApp
       case req.path_info
       when "/"
         status = 200
-        body = [{success:"Welcome to Demp App!!"}.to_json]
+        body = [{success: "Welcome"}.to_json]
+        #headers ['Last-Modified'] = "Mon, 04 Jul 2018 10:00:12 GMT"  ##we can set this header
       when "/search"
         status = 200
+        users, max_updated_at = User.search(req.params)
+        body = [{users: users}.to_json]
+        headers ['Last-Modified'] =  max_updated_at
 
-        users = User.search(req.params)
-        body = [users]
+        if env["HTTP_IF_MODIFIED_SINCE"] && env["HTTP_IF_MODIFIED_SINCE"] == max_updated_at
+            status = 304
+            body = []
+            headers.delete("Content-Type")
+        end
       else
         status = 404
         body = [{error: "Page not found"}.to_json]
